@@ -71,7 +71,7 @@ pub fn buildASan(b: *std.Build, lib: *std.Build.Step.Compile) void {
             },
             else => &.{},
         },
-        .flags = cxxflags,
+        .flags = allflags,
     });
     // lib.addCSourceFiles(.{
     //     .root = dep.path("lib/asan_abi"),
@@ -79,7 +79,7 @@ pub fn buildASan(b: *std.Build, lib: *std.Build.Step.Compile) void {
     //         "asan_abi.cpp",
     //         // "asan_abi_shim.cpp",
     //     },
-    //     .flags = cxxflags,
+    //     .flags = allflags,
     // });
     lib.addCSourceFiles(.{
         .root = dep.path("lib/lsan"),
@@ -99,14 +99,14 @@ pub fn buildASan(b: *std.Build, lib: *std.Build.Step.Compile) void {
             },
             else => @panic("unsupported os"),
         },
-        .flags = cxxflags,
+        .flags = allflags,
     });
     lib.addCSourceFiles(.{
         .root = dep.path("lib/lsan"),
         .files = &.{
             "lsan_common.cpp",
         },
-        .flags = cxxflags,
+        .flags = allflags,
     });
     lib.addCSourceFiles(.{
         .root = dep.path("lib/ubsan"),
@@ -123,7 +123,7 @@ pub fn buildASan(b: *std.Build, lib: *std.Build.Step.Compile) void {
             "ubsan_value.cpp",
             "ubsan_win_runtime_thunk.cpp",
         },
-        .flags = cxxflags,
+        .flags = allflags,
     });
     if (!lib.rootModuleTarget().os.tag.isDarwin())
         lib.addAssemblyFile(dep.path("lib/asan/asan_interceptors_vfork.S"));
@@ -163,7 +163,7 @@ pub fn buildLSan(b: *std.Build, lib: *std.Build.Step.Compile) void {
             },
             else => @panic("unsupported os"),
         },
-        .flags = cxxflags,
+        .flags = allflags,
     });
     lib.addCSourceFiles(.{
         .root = dep.path("lib/lsan"),
@@ -176,7 +176,7 @@ pub fn buildLSan(b: *std.Build, lib: *std.Build.Step.Compile) void {
             "lsan_preinit.cpp",
             "lsan_thread.cpp",
         },
-        .flags = cxxflags,
+        .flags = allflags,
     });
     if (lib.rootModuleTarget().abi != .msvc) {
         lib.linkLibCpp();
@@ -206,12 +206,12 @@ fn buildInterception(lib: *std.Build.Step.Compile, dependency: ?*std.Build.Depen
             },
             else => &.{},
         },
-        .flags = cxxflags,
+        .flags = allflags,
     });
     lib.addCSourceFiles(.{
         .root = dep.path("lib/interception"),
         .files = &.{"interception_type_test.cpp"},
-        .flags = cxxflags,
+        .flags = allflags,
     });
 }
 fn buildSanCommon(lib: *std.Build.Step.Compile, dependency: ?*std.Build.Dependency) void {
@@ -245,7 +245,7 @@ fn buildSanCommon(lib: *std.Build.Step.Compile, dependency: ?*std.Build.Dependen
     lib.addCSourceFiles(.{
         .root = dep.path("lib/sanitizer_common"),
         .files = need_libc,
-        .flags = cxxflags,
+        .flags = allflags,
     });
     lib.addCSourceFiles(.{
         .root = dep.path("lib/sanitizer_common"),
@@ -309,7 +309,7 @@ fn buildSanCommon(lib: *std.Build.Step.Compile, dependency: ?*std.Build.Dependen
             },
             else => &.{},
         },
-        .flags = cxxflags,
+        .flags = allflags,
     });
     lib.addCSourceFiles(.{
         .root = dep.path("lib/sanitizer_common"),
@@ -354,7 +354,7 @@ fn buildSanCommon(lib: *std.Build.Step.Compile, dependency: ?*std.Build.Dependen
             // "symbolizer/sanitizer_symbolize.cpp", // need LLVM headers
             // "symbolizer/sanitizer_wrappers.cpp",
         },
-        .flags = cxxflags,
+        .flags = allflags,
     });
 }
 
@@ -385,14 +385,14 @@ pub fn buildUBSan(b: *std.Build, lib: *std.Build.Step.Compile) void {
             "ubsan_win_dynamic_runtime_thunk.cpp",
             "ubsan_win_weak_interception.cpp",
         },
-        .flags = cxxflags,
+        .flags = allflags,
     });
     // lib.addCSourceFiles(.{
     //     .root = dep.path("lib/ubsan_minimal"),
     //     .files = &.{
     //         "ubsan_minimal_handlers.cpp",
     //     },
-    //     .flags = cxxflags,
+    //     .flags = allflags,
     // });
 }
 
@@ -412,7 +412,7 @@ pub fn buildRTSan(b: *std.Build, lib: *std.Build.Step.Compile) void {
             "rtsan_diagnostics.cpp",
             "rtsan_suppressions.cpp",
         },
-        .flags = cxxflags,
+        .flags = allflags,
     });
     if (lib.rootModuleTarget().abi != .msvc) {
         lib.addCSourceFiles(.{
@@ -420,7 +420,7 @@ pub fn buildRTSan(b: *std.Build, lib: *std.Build.Step.Compile) void {
             .files = &.{
                 "rtsan_interceptors_posix.cpp",
             },
-            .flags = cxxflags,
+            .flags = allflags,
         });
         lib.linkLibCpp();
     } else {
@@ -430,10 +430,60 @@ pub fn buildRTSan(b: *std.Build, lib: *std.Build.Step.Compile) void {
     buildSanCommon(lib, dep);
 }
 
-const cxxflags = &.{
-    "-std=c++17",
+const allflags = if (@import("builtin").os.tag.isDarwin()) cxxflags ++ ldflags else cxxflags;
+
+const cxxflags: []const []const u8 = &.{
+    "-std=c++20",
     "-Wall",
     "-Wextra",
+    "-fexperimental-library",
+};
+
+const ldflags: []const []const u8 = &.{
+    "-static-libsan",
+    // asan
+    "-Wl,-U,___asan_default_options",
+    "-Wl,-U,___asan_default_suppressions",
+    "-Wl,-U,___asan_on_error",
+    "-Wl,-U,___asan_set_shadow_00",
+    "-Wl,-U,___asan_set_shadow_f1",
+    "-Wl,-U,___asan_set_shadow_f2",
+    "-Wl,-U,___asan_set_shadow_f3",
+    "-Wl,-U,___asan_set_shadow_f4",
+    "-Wl,-U,___asan_set_shadow_f5",
+    "-Wl,-U,___asan_set_shadow_f6",
+    "-Wl,-U,___asan_set_shadow_f7",
+    "-Wl,-U,___asan_set_shadow_f8",
+
+    // lsan
+    "-Wl,-U,___lsan_default_options",
+    "-Wl,-U,___lsan_default_suppressions",
+    "-Wl,-U,___lsan_is_turned_off",
+
+    // ubsan
+    "-Wl,-U,___ubsan_default_options",
+
+    // sanitizer_common
+    "-Wl,-U,___sanitizer_free_hook",
+    "-Wl,-U,___sanitizer_malloc_hook",
+    "-Wl,-U,___sanitizer_report_error_summary",
+    "-Wl,-U,___sanitizer_sandbox_on_notify",
+    "-Wl,-U,___sanitizer_symbolize_code",
+    "-Wl,-U,___sanitizer_symbolize_data",
+    "-Wl,-U,___sanitizer_symbolize_frame",
+    "-Wl,-U,___sanitizer_symbolize_demangle",
+    "-Wl,-U,___sanitizer_symbolize_flush",
+    "-Wl,-U,___sanitizer_symbolize_set_demangle",
+    "-Wl,-U,___sanitizer_symbolize_set_inline_frames",
+
+    // xray
+    "-Wl,-U,___start_xray_fn_idx",
+    "-Wl,-U,___start_xray_instr_map",
+    "-Wl,-U,___stop_xray_fn_idx",
+    "-Wl,-U,___stop_xray_instr_map",
+
+    // FIXME: better
+    "-Wl,-install_name,@rpath/libclang_rt.asan_osx_dynamic.dylib",
 };
 
 // const src = &.{
