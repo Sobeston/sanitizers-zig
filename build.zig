@@ -114,18 +114,18 @@ pub fn buildASan(b: *std.Build, lib: *std.Build.Step.Compile) void {
             "ubsan_diag.cpp",
             "ubsan_flags.cpp",
             "ubsan_init.cpp",
+            "ubsan_handlers.cpp",
+            "ubsan_handlers_cxx.cpp",
             "ubsan_monitor.cpp",
             "ubsan_type_hash.cpp",
             "ubsan_type_hash_itanium.cpp",
             "ubsan_type_hash_win.cpp",
             "ubsan_value.cpp",
-            "ubsan_win_dll_thunk.cpp",
-            "ubsan_win_dynamic_runtime_thunk.cpp",
-            "ubsan_win_weak_interception.cpp",
+            "ubsan_win_runtime_thunk.cpp",
         },
         .flags = cxxflags,
     });
-    if (!lib.rootModuleTarget().isDarwin())
+    if (!lib.rootModuleTarget().os.tag.isDarwin())
         lib.addAssemblyFile(dep.path("lib/asan/asan_interceptors_vfork.S"));
     if (lib.rootModuleTarget().cpu.arch.isX86())
         lib.addAssemblyFile(dep.path("lib/asan/asan_rtl_x86_64.S"));
@@ -347,6 +347,7 @@ fn buildSanCommon(lib: *std.Build.Step.Compile, dependency: ?*std.Build.Dependen
             "sanitizer_symbolizer_report.cpp",
             "sanitizer_termination.cpp",
             "sanitizer_thread_arg_retval.cpp",
+            "sanitizer_thread_history.cpp",
             "sanitizer_thread_registry.cpp",
             "sanitizer_tls_get_addr.cpp",
             "sanitizer_type_traits.cpp",
@@ -405,13 +406,22 @@ pub fn buildRTSan(b: *std.Build, lib: *std.Build.Step.Compile) void {
         .files = &.{
             "rtsan.cpp",
             "rtsan_context.cpp",
-            "rtsan_interceptors.cpp",
             "rtsan_preinit.cpp",
-            "rtsan_stack.cpp",
+            "rtsan_stats.cpp",
+            "rtsan_flags.cpp",
+            "rtsan_diagnostics.cpp",
+            "rtsan_suppressions.cpp",
         },
         .flags = cxxflags,
     });
     if (lib.rootModuleTarget().abi != .msvc) {
+        lib.addCSourceFiles(.{
+            .root = dep.path("lib/rtsan"),
+            .files = &.{
+                "rtsan_interceptors_posix.cpp",
+            },
+            .flags = cxxflags,
+        });
         lib.linkLibCpp();
     } else {
         lib.linkLibC();

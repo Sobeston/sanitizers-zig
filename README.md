@@ -7,7 +7,7 @@ This is a collection of sanitizers for Zig. It is a work in progress.
 
 ## Requirements
 
-- [Zig](https://ziglang.org/download/) v0.13.0 or master
+- [Zig](https://ziglang.org/download/) v0.15.0-dev
 
 ## Add
 
