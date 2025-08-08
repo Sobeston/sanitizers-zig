@@ -118,7 +118,7 @@ pub fn buildASan(b: *std.Build, lib: *std.Build.Step.Compile) void {
             // "ubsan_handlers_cxx.cpp",
             "ubsan_monitor.cpp",
             "ubsan_type_hash.cpp",
-            // "ubsan_type_hash_itanium.cpp",
+            "ubsan_type_hash_itanium.cpp",
             // "ubsan_type_hash_win.cpp",
             "ubsan_value.cpp",
             // "ubsan_win_runtime_thunk.cpp",
