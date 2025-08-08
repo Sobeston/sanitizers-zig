@@ -15,7 +15,7 @@
     // This field is optional.
     // This is currently advisory only; Zig does not yet do anything
     // with this value.
-    .minimum_zig_version = "0.13.0",
+    .minimum_zig_version = "0.14.1",
 
     // This field is optional.
     // Each dependency must either provide a `url` and `hash`, or a `path`.
@@ -24,8 +24,8 @@
     // internet connectivity.
     .dependencies = .{
         .@"compiler-rt" = .{
-            .url = "https://github.com/llvm/llvm-project/releases/download/llvmorg-20.1.2/compiler-rt-20.1.2.src.tar.xz",
-            .hash = "N-V-__8AABunXAKgCyNjblqAp53QvF3F5urw2YUP2gwu40NX",
+            .url = "https://github.com/llvm/llvm-project/releases/download/llvmorg-19.1.7/compiler-rt-19.1.7.src.tar.xz",
+            .hash = "N-V-__8AAEp0VALZjFZEqdKY2wubKyhHNv0KVBc2tslmV8vn",
         },
     },
     .paths = .{
